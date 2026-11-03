@@ -79,6 +79,8 @@ those require service and model credentials.
 
 **Status:** PASS
 
+**Diff retrieval update (2026-11-03):** Enabled the opt-in merge-request diff tool in the example. The GitLab toolkit tests pass (33 tests), including sync/async HTTP requests against a local test server, project-path encoding, pagination bounds, omitted patch flags, and API errors. Calls through the registered sync/async tool entrypoints against the public `gitlab-org/cli` merge request `!4300` returned identical first-page results, including a nonempty patch. Cookbook syntax compilation passed. The full agent example was not executed because it requires model credentials.
+
 **Description:** Added GitLab toolkit example and validated sync + async GitLab toolkit behavior with mocked unit tests and live GitLab API checks using a real project (`SalimELMARDI/agno-gitlab-tools-test`).
 
 **Result:** Ran `pytest libs/agno/tests/unit/tools/test_gitlab.py -q` and all 18 tests passed, including async methods, internal async client handling coverage, and `enable_*` tool-toggle coverage (with `enable_get_projects` as the canonical project-read toggle). Also ran `ruff check` for changed files and both validation scripts (`libs/agno/scripts/validate.bat`, `libs/agno_infra/scripts/validate.bat`) with no issues. Live toolkit checks passed for `get_project`, `list_issues`, and `list_merge_requests` against `SalimELMARDI/agno-gitlab-tools-test`. Negative live check also passed: `get_project('wrong-group/wrong-project')` returned expected JSON error (`404 Project Not Found`). The cookbook agent runtime file was not executed because it requires model credentials.

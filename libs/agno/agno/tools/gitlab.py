@@ -28,6 +28,7 @@ class GitlabTools(Toolkit):
         enable_list_merge_requests: bool = True,
         enable_get_merge_request: bool = True,
         enable_list_issues: bool = True,
+        enable_get_merge_request_diffs: bool = False,
         **kwargs,
     ):
         self.access_token = access_token or getenv("GITLAB_ACCESS_TOKEN")
@@ -54,6 +55,9 @@ class GitlabTools(Toolkit):
         if enable_list_issues:
             tools.append(self.list_issues)
             async_tools.append((self.alist_issues, "list_issues"))
+        if enable_get_merge_request_diffs:
+            tools.append(self.get_merge_request_diffs)
+            async_tools.append((self.aget_merge_request_diffs, "get_merge_request_diffs"))
 
         super().__init__(name="gitlab", tools=tools, async_tools=async_tools, **kwargs)
 
@@ -466,6 +470,71 @@ class GitlabTools(Toolkit):
             return self._json_error(str(e))
         except Exception as e:
             logger.exception(f"Unexpected error while getting merge request {merge_request_iid}")
+            return self._json_error(str(e))
+
+    def get_merge_request_diffs(
+        self, project_id_or_path: str, merge_request_iid: int, page: int = 1, per_page: int = 20
+    ) -> str:
+        """Read one page of changed files and patches for a merge request.
+
+        Args:
+            project_id_or_path: GitLab project ID or namespaced project path.
+            merge_request_iid: Internal merge request IID in the project.
+            page: Page number for pagination.
+            per_page: Files per page, bounded to 1-100.
+
+        Returns:
+            JSON containing data and pagination metadata. GitLab's collapsed and
+            too_large flags are preserved when patch content is omitted.
+        """
+        try:
+            per_page = self._bound_page_size(per_page)
+            project_ref = self._encode_project_ref(project_id_or_path)
+            data = self.client.http_list(
+                f"/projects/{project_ref}/merge_requests/{merge_request_iid}/diffs",
+                query_data={"page": page, "per_page": per_page},
+                get_all=False,
+            )
+            return json.dumps({"data": data, "meta": self._build_meta(page, per_page, len(data))}, indent=2)
+        except (GitlabAuthenticationError, GitlabError) as e:
+            logger.exception(f"GitLab API error while getting diffs for merge request {merge_request_iid}")
+            return self._json_error(str(e))
+        except Exception as e:
+            logger.exception(f"Unexpected error while getting diffs for merge request {merge_request_iid}")
+            return self._json_error(str(e))
+
+    async def aget_merge_request_diffs(
+        self, project_id_or_path: str, merge_request_iid: int, page: int = 1, per_page: int = 20
+    ) -> str:
+        """Read one page of merge request diffs using async HTTP requests.
+
+        Args:
+            project_id_or_path: GitLab project ID or namespaced project path.
+            merge_request_iid: Internal merge request IID in the project.
+            page: Page number for pagination.
+            per_page: Files per page, bounded to 1-100.
+
+        Returns:
+            JSON containing data and pagination metadata, including GitLab's
+            collapsed and too_large flags when patch content is omitted.
+        """
+        try:
+            per_page = self._bound_page_size(per_page)
+            project_ref = self._encode_project_ref(project_id_or_path)
+            data = await self._aget(
+                f"/projects/{project_ref}/merge_requests/{merge_request_iid}/diffs",
+                params={"page": page, "per_page": per_page},
+            )
+            return json.dumps({"data": data, "meta": self._build_meta(page, per_page, len(data))}, indent=2)
+        except httpx.HTTPStatusError as e:
+            message = self._http_error_message(e.response)
+            log_error(f"GitLab API error while getting diffs for merge request {merge_request_iid}: {message}")
+            return self._json_error(message)
+        except httpx.RequestError as e:
+            logger.exception(f"GitLab request error while getting diffs for merge request {merge_request_iid}")
+            return self._json_error(str(e))
+        except Exception as e:
+            logger.exception(f"Unexpected error while getting diffs for merge request {merge_request_iid}")
             return self._json_error(str(e))
 
     def list_issues(

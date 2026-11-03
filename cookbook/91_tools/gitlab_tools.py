@@ -27,6 +27,7 @@ agent = Agent(
             enable_get_projects=True,
             enable_list_merge_requests=True,
             enable_get_merge_request=True,
+            enable_get_merge_request_diffs=True,
             enable_list_issues=True,
         )
     ],
@@ -37,7 +38,8 @@ agent = Agent(
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     agent.print_response(
-        "List open merge requests for project 'gitlab-org/gitlab' and summarize the top 5 by recency.",
+        "Find the most recent open merge request in 'gitlab-org/gitlab', read its first page of diffs, "
+        "and summarize the code changes. Mention any collapsed or too-large patches and that only one page was read.",
         markdown=True,
     )
 
