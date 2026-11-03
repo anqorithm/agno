@@ -1,0 +1,21 @@
+BEFORE, upstream main
+Merge request metadata tool registered: True
+Merge request diffs tool registered: False
+
+AFTER, registered agent tool calls against public GitLab
+Project: gitlab-org/cli, merge request: !4300
+Sync and async results match: True
+Page metadata: {"current_page": 1, "per_page": 1, "returned_items": 1}
+Changed file: internal/commands/govern/audit/sync/sync_test.go
+Patch characters retrieved: 2353
+Requests were read-only, no model calls or API keys used
+
+VERIFICATION
+33 focused GitLab tests passed
+Agno format script passed
+Agno validation passed: Ruff, mypy (1,214 files), cookbook checks
+Source distribution and wheel built successfully
+Agent cookbook syntax checked, paid model execution not run
+
+Commit: f0530ff58
+Upstream PR pending maintainer ready label on issue #11436
